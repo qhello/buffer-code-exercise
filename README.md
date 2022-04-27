@@ -69,7 +69,7 @@ Try to complete the tasks to the best of your ability. Good luck! 😃
 ### ⭐️ Tasks
 
 1. Add a “Load More” button at the end of the list of updates which loads the next 10 updates each time it's clicked
-2. Append analytics from the "updates-analytics" collection to each update returned in the `/getUpdates` endpoint
+~~2. Append analytics from the "updates-analytics" collection to each update returned in the `/getUpdates` endpoint~~
 3. Write a script in `/server/scripts/updateAnalyticsData.js` to fetch the most recent Tweet analytics from [the API](https://github.com/bufferapp/buffer-code-exercise-api#buffer-code-exercise-api) and update the "updates-analytics" records in the database.
 4. Add new `/getAnalyticsTimeseries` endpoint which returns a timeseries of all update analytics, aggregated by the day that the update was sent: `[{ timestamp: 1526601600, retweets: 1, favorites: 2, clicks: 4 }, ...]`
 5. [Extra credit] All of the React front-end is written using class components. Choose one (1) component to upgrade to a more modern approach (functional components, hooks for state and data fetching, etc.)
