@@ -38,7 +38,19 @@ app.get("/api/getUpdates", (req, res) => {
     .get("updates")
     .orderBy("sent_at", "desc")
     .slice(0, 10)
-    .value();
+    .value()
+    .map((update) => {
+      const analytics = db.lodash
+        .get("updates-analytics")
+        .find({ update_id: update.id })
+        .pick(["retweets", "favorites", "clicks"])
+        .value();
+
+      return {
+        ...update,
+        statistics: analytics ?? {},
+      };
+    });
 
   res.json(updates);
 });
