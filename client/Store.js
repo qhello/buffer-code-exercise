@@ -44,6 +44,15 @@ class Store {
           })
           .catch(this.handleError);
         break;
+      case actions.LOAD_MORE_UPDATES:
+        const updates = this.getState("updates");
+
+        Api.get("getUpdates", { skip: updates.length })
+          .then((newUpdates) => {
+            this.setState("updates", [...updates, ...newUpdates]);
+          })
+          .catch(this.handleError);
+        break;
       case actions.LOAD_ANALYTICS:
         Api.get("getAnalyticsTimeseries")
           .then((timeseries) => {
