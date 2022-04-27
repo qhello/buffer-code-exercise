@@ -3520,9 +3520,9 @@
     {
       "_id": "5afef19c8bc4439870ed981f",
       "update_id": "5ae55aaa3eae5117214f8cb0",
-      "retweets": 0,
-      "favorites": 0,
-      "clicks": 0
+      "retweets": 7,
+      "favorites": 6,
+      "clicks": 17
     },
     {
       "_id": "5afef19c8bc4439870ed9820",
@@ -3541,16 +3541,16 @@
     {
       "_id": "5afef19c8bc4439870ed9822",
       "update_id": "5ae1bda66739e65a71737d82",
-      "retweets": 2,
-      "favorites": 3,
+      "retweets": 9,
+      "favorites": 17,
       "clicks": 0
     },
     {
       "_id": "5afef19c8bc4439870ed9823",
       "update_id": "5ae1bbdd0b3b3a402c737d8a",
-      "retweets": 7,
-      "favorites": 9,
-      "clicks": 25
+      "retweets": 8,
+      "favorites": 11,
+      "clicks": 35
     },
     {
       "_id": "5afef19c8bc4439870ed9824",
@@ -3898,9 +3898,9 @@
     {
       "_id": "5afef19c8bc4439870ed9855",
       "update_id": "5ad42d58dead14ac42e8ef0e",
-      "retweets": 20,
-      "favorites": 18,
-      "clicks": 120
+      "retweets": 24,
+      "favorites": 28,
+      "clicks": 160
     },
     {
       "_id": "5afef19c8bc4439870ed9856",
