@@ -1,27 +1,25 @@
 import { URL } from "url";
-import { Low, JSONFileSync } from "lowdb";
+import { JSONFile } from "lowdb";
 import lodash from "lodash";
 import axios from "axios";
+import { Data, LowWithLodash } from "../types.mjs";
 
 // Set up database
-const pathToDb = new URL("../database/db.json", import.meta.url).pathname;
-const adapter = new JSONFileSync(pathToDb);
-const db = new Low(adapter);
+const pathToDb = new URL("../../../database/db.json", import.meta.url).pathname;
+const adapter = new JSONFile<Data>(pathToDb);
+const db = new LowWithLodash(adapter);
 await db.read();
-
-// Add lodash to the lowdb database
-db.lodash = lodash.chain(db.data);
 
 console.log("Updating analytics data...");
 
 // Create a map between our tweet IDs and their corresponding update id
-const tweetIdToUpdateId = db.lodash
+const tweetIdToUpdateId = db.chain
   .get("updates")
   .value()
   .reduce((acc, { id, service_update_id }) => {
     acc[service_update_id] = id;
     return acc;
-  }, {});
+  }, {} as { [key: string]: string });
 
 // Fetch updated analytics data for each tweet
 const freshTweetAnalytics = await axios.get(
@@ -43,13 +41,16 @@ for (const tweetAnalytics of freshTweetAnalytics.data) {
   } = tweetAnalytics;
 
   // Determine the index of the corresponding "updates-analytics" element in our database
-  const indexInDb = db.lodash
+  const indexInDb = db.chain
     .get("updates-analytics")
     .findIndex(({ update_id }) => update_id === tweetIdToUpdateId[id])
     .value();
 
+  // Quick trick here, didn't have time to make it better, sorry =)
+  const dbData = db.data as Data;
+
   // Equivalent as using Object.assign (in our case)
-  lodash.merge(db.data["updates-analytics"][indexInDb], {
+  lodash.merge(dbData["updates-analytics"][indexInDb], {
     retweets,
     favorites,
     clicks,

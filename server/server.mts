@@ -1,44 +1,39 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import serveStatic from "serve-static";
 import morgan from "morgan";
-import path from "path";
 import { URL } from "url";
 
-import { Low, JSONFileSync } from "lowdb";
-import lodash from "lodash";
+import { JSONFile } from "lowdb";
 
-import addUpdateAnalytics from "./lib/addUpdateAnalytics.js";
-
+import { Data, LowWithLodash } from "./types.mjs";
+import addUpdateAnalytics from "./lib/addUpdateAnalytics.mjs";
 import {
   getDayStartFromUnixTimestamp,
   getTimestampSeriesArray,
-} from "./lib/dates.js";
+} from "./lib/dates.mjs";
 
 const app = express();
 const PORT = 8080;
 
 // Set up database
-const pathToDb = new URL("./database/db.json", import.meta.url).pathname;
-const adapter = new JSONFileSync(pathToDb);
-const db = new Low(adapter);
+const pathToDb = new URL("../../database/db.json", import.meta.url).pathname;
+const adapter = new JSONFile<Data>(pathToDb);
+const db = new LowWithLodash(adapter);
 await db.read();
-
-// Add lodash to the lowdb database
-db.lodash = lodash.chain(db.data);
 
 // Logger
 app.use(morgan("dev"));
 
 // Disable caching for API endpoints
-app.use("/api", (req, res, next) => {
+app.use("/api", (_, res, next) => {
   res.header("Cache-Control", "no-cache");
   next();
 });
 
 app.get("/api/getUpdates", (req, res) => {
-  const skip = parseInt(req.query.skip ?? 0);
+  const skip = parseInt((req.query.skip as string) ?? 0);
 
-  const updates = db.lodash
+  const updates = db.chain
     .get("updates")
     .orderBy("sent_at", "desc")
     .slice(skip, skip + 10)
@@ -48,9 +43,9 @@ app.get("/api/getUpdates", (req, res) => {
   res.json(updates);
 });
 
-app.get("/api/getAnalyticsTimeseries", (req, res) => {
+app.get("/api/getAnalyticsTimeseries", (_req, res) => {
   // Fetch all our updates, group them by day
-  const updatesByDay = db.lodash
+  const updatesByDay = db.chain
     .get("updates")
     .map(addUpdateAnalytics(db))
     .groupBy(({ sent_at }) => getDayStartFromUnixTimestamp(sent_at))
@@ -61,10 +56,15 @@ app.get("/api/getAnalyticsTimeseries", (req, res) => {
     .map((i) => parseInt(i))
     .sort();
 
+  if (!sortedListOfDays.length) {
+    res.json([]);
+    return;
+  }
+
   // Get exhaustive list of days between our boundaries
   const listOfDaysToReturn = getTimestampSeriesArray(
-    lodash.first(sortedListOfDays),
-    lodash.last(sortedListOfDays)
+    sortedListOfDays[0],
+    sortedListOfDays[sortedListOfDays.length - 1]
   );
 
   // Reduce our updates statistics to a timeseries
@@ -94,20 +94,29 @@ app.get("/api/getAnalyticsTimeseries", (req, res) => {
 });
 
 // Serve static assets in the /public directory
-const pathToStatic = new URL("../public", import.meta.url).pathname;
+const pathToStatic = new URL("../../public", import.meta.url).pathname;
 app.use(
   serveStatic(pathToStatic, {
-    cacheControl: "no-cache",
+    setHeaders: (res) => {
+      res.setHeader("Cache-Control", "no-cache");
+    },
   })
 );
 
-app.use((err, req, res, next) => {
-  // Handle missing file in public dir as a 404
-  if (err.code === "ENOENT") {
-    return res.status(404).send("404 - Page not found");
+app.use(
+  (
+    err: { code: string },
+    _req: Request,
+    res: Response,
+    _next: NextFunction
+  ) => {
+    // Handle missing file in public dir as a 404
+    if (err.code === "ENOENT") {
+      return res.status(404).send("404 - Page not found");
+    }
+    console.log(err);
+    res.status(500).send(err);
   }
-  console.log(err);
-  res.status(500).send(err);
-});
+);
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));

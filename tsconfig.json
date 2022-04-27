@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "moduleResolution": "node",
+    "module": "ESNext",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "removeComments": true,
+    "target": "ESNext",
+    "strict": true,
+    "preserveSymlinks": true,
+    "baseUrl": "server",
+    "composite": true,
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "strictPropertyInitialization": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+  },
+}
