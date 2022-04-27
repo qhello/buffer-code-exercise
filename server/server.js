@@ -7,6 +7,8 @@ import { URL } from "url";
 import { Low, JSONFileSync } from "lowdb";
 import lodash from "lodash";
 
+import addUpdateAnalytics from "./lib/addUpdateAnalytics.js";
+
 import {
   getDayStartFromUnixTimestamp,
   getTimestampSeriesArray,
@@ -38,21 +40,55 @@ app.get("/api/getUpdates", (req, res) => {
     .get("updates")
     .orderBy("sent_at", "desc")
     .slice(0, 10)
-    .value()
-    .map((update) => {
-      const analytics = db.lodash
-        .get("updates-analytics")
-        .find({ update_id: update.id })
-        .pick(["retweets", "favorites", "clicks"])
-        .value();
-
-      return {
-        ...update,
-        statistics: analytics ?? {},
-      };
-    });
+    .map(addUpdateAnalytics(db))
+    .value();
 
   res.json(updates);
+});
+
+app.get("/api/getAnalyticsTimeseries", (req, res) => {
+  // Fetch all our updates, group them by day
+  const updatesByDay = db.lodash
+    .get("updates")
+    .map(addUpdateAnalytics(db))
+    .groupBy(({ sent_at }) => getDayStartFromUnixTimestamp(sent_at))
+    .value();
+
+  // Get all our timestamps, and sort them (just in case)
+  const sortedListOfDays = Object.keys(updatesByDay)
+    .map((i) => parseInt(i))
+    .sort();
+
+  // Get exhaustive list of days between our boundaries
+  const listOfDaysToReturn = getTimestampSeriesArray(
+    lodash.first(sortedListOfDays),
+    lodash.last(sortedListOfDays)
+  );
+
+  // Reduce our updates statistics to a timeseries
+  const result = listOfDaysToReturn.map((timestamp) => {
+    const updates = updatesByDay[timestamp.toString()] ?? [];
+
+    const statisticsAggregation = updates.reduce(
+      (acc, { statistics }) => ({
+        retweets: acc.retweets + statistics.retweets,
+        favorites: acc.favorites + statistics.favorites,
+        clicks: acc.clicks + statistics.clicks,
+      }),
+      {
+        retweets: 0,
+        favorites: 0,
+        clicks: 0,
+      }
+    );
+
+    return {
+      timestamp,
+      ...statisticsAggregation,
+    };
+  });
+
+  res.json(result);
 });
 
 // Serve static assets in the /public directory
