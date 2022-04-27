@@ -36,10 +36,12 @@ app.use("/api", (req, res, next) => {
 });
 
 app.get("/api/getUpdates", (req, res) => {
+  const skip = parseInt(req.query.skip ?? 0);
+
   const updates = db.lodash
     .get("updates")
     .orderBy("sent_at", "desc")
-    .slice(0, 10)
+    .slice(skip, skip + 10)
     .map(addUpdateAnalytics(db))
     .value();
 
